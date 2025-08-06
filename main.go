@@ -116,7 +116,7 @@ func commandMap(config *cmdConfig) error {
 
 func commandMapB(config *cmdConfig) error {
 	if config.PrevURL == nil {
-		return errors.New("you're on the first page\n")
+		return errors.New("you're on the first page")
 	}
 
 	locationResp, err := config.pokeapiClient.LARequest(config.PrevURL)
