@@ -3,7 +3,6 @@ package main
 import (
 	pokeapi "bd_gokedex/internal/pokeapi"
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -15,7 +14,7 @@ var supportedCmds map[string]cliCommand
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*cmdConfig) error
+	callback    func(*cmdConfig, []string) error
 }
 
 type cmdConfig struct {
@@ -46,6 +45,11 @@ func getCmds() map[string]cliCommand {
 			description: "Displays a list of 20 regions, counting down",
 			callback:    commandMapB,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Lists pokemon in an area. Requires an area to return results.",
+			callback:    commandExplore,
+		},
 	}
 }
 
@@ -67,8 +71,9 @@ func startRepl(config *cmdConfig) {
 		cleanCmd := cleanInput(newCmd)
 		//fmt.Printf("Your command was: %v\n", cleanCmd[0])
 		command, exists := getCmds()[cleanCmd[0]]
+		param := cleanCmd[1:]
 		if exists {
-			err := command.callback(config)
+			err := command.callback(config, param)
 			if err != nil {
 				fmt.Printf("Error: %v", err)
 			}
@@ -83,52 +88,4 @@ func cleanInput(text string) []string {
 	lowerText := strings.ToLower((trimText))
 	returnString := strings.Fields(lowerText)
 	return returnString
-}
-
-func commandExit(config *cmdConfig) error {
-	fmt.Print("Closing the Pokedex... Goodbye!\n")
-	defer os.Exit(0)
-	return nil
-}
-
-func commandHelp(config *cmdConfig) error {
-	fmt.Print("Welcome to the Pokedex!\nUsage:\n\n")
-	for key := range supportedCmds {
-		fmt.Printf("%s: %s\n", supportedCmds[key].name, supportedCmds[key].description)
-	}
-	return nil
-}
-
-func commandMap(config *cmdConfig) error {
-	locationsResp, err := config.pokeapiClient.LARequest(config.NextURL)
-	if err != nil {
-		return err
-	}
-
-	config.NextURL = locationsResp.Next
-	config.PrevURL = locationsResp.Previous
-
-	for _, loc := range locationsResp.Results {
-		fmt.Println(loc.Name)
-	}
-	return nil
-}
-
-func commandMapB(config *cmdConfig) error {
-	if config.PrevURL == nil {
-		return errors.New("you're on the first page")
-	}
-
-	locationResp, err := config.pokeapiClient.LARequest(config.PrevURL)
-	if err != nil {
-		return err
-	}
-
-	config.NextURL = locationResp.Next
-	config.PrevURL = locationResp.Previous
-
-	for _, loc := range locationResp.Results {
-		fmt.Println(loc.Name)
-	}
-	return nil
 }
