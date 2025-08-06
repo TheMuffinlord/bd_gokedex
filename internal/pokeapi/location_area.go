@@ -2,100 +2,58 @@ package pokeapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 )
 
-type LocationArea struct {
-	ID                   int    `json:"id"`
-	Name                 string `json:"name"`
-	GameIndex            int    `json:"game_index"`
-	EncounterMethodRates []struct {
-		EncounterMethod struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"encounter_method"`
-		VersionDetails []struct {
-			Rate    int `json:"rate"`
-			Version struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"version"`
-		} `json:"version_details"`
-	} `json:"encounter_method_rates"`
-	Location struct {
+type RespShallowLocations struct {
+	Count    int     `json:"count"`
+	Next     *string `json:"next"`
+	Previous *string `json:"previous"`
+	Results  []struct {
 		Name string `json:"name"`
 		URL  string `json:"url"`
-	} `json:"location"`
-	Names []struct {
-		Name     string `json:"name"`
-		Language struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"language"`
-	} `json:"names"`
-	PokemonEncounters []struct {
-		Pokemon struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"pokemon"`
-		VersionDetails []struct {
-			Version struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"version"`
-			MaxChance        int `json:"max_chance"`
-			EncounterDetails []struct {
-				MinLevel        int   `json:"min_level"`
-				MaxLevel        int   `json:"max_level"`
-				ConditionValues []any `json:"condition_values"`
-				Chance          int   `json:"chance"`
-				Method          struct {
-					Name string `json:"name"`
-					URL  string `json:"url"`
-				} `json:"method"`
-			} `json:"encounter_details"`
-		} `json:"version_details"`
-	} `json:"pokemon_encounters"`
+	} `json:"results"`
 }
 
-func (c *Client) LARequest(currentID int) (string, error) {
-	urlString := baseURL + "/location-area/" + strconv.Itoa(currentID) + "/"
-
-	if val, ok := c.cache.Get(urlString); ok {
-		locationArea := LocationArea{}
-		err := json.Unmarshal(val, &locationArea)
-		if err != nil {
-			rS := fmt.Sprintf("Error reading data: %v", err)
-			return rS, err
-		}
-		locationAreaName := string(locationArea.Name)
-		return locationAreaName, nil
+func (c *Client) LARequest(pageURL *string) (RespShallowLocations, error) {
+	url := baseURL + "/location-area"
+	if pageURL != nil {
+		url = *pageURL
 	}
 
-	resp, err := http.Get(urlString)
+	if val, ok := c.cache.Get(url); ok {
+		locationsResp := RespShallowLocations{}
+		err := json.Unmarshal(val, &locationsResp)
+		if err != nil {
+			return RespShallowLocations{}, err
+		}
+
+		return locationsResp, nil
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		rS := fmt.Sprintf("Error contacting PokeAPI: %v", err)
-		return rS, err
+		return RespShallowLocations{}, err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return RespShallowLocations{}, err
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	dat, err := io.ReadAll(resp.Body)
 	if err != nil {
-		rS := fmt.Sprintf("Error reading response: %v", err)
-		return rS, err
+		return RespShallowLocations{}, err
 	}
 
-	locationArea := LocationArea{}
-
-	err = json.Unmarshal(data, &locationArea)
+	locationsResp := RespShallowLocations{}
+	err = json.Unmarshal(dat, &locationsResp)
 	if err != nil {
-		rS := fmt.Sprintf("Error reading data: %v", err)
-		return rS, err
+		return RespShallowLocations{}, err
 	}
-	locationAreaName := string(locationArea.Name)
-	c.cache.Add(urlString, data)
-	return locationAreaName, nil
+
+	c.cache.Add(url, dat)
+	return locationsResp, nil
 }

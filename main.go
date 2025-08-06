@@ -3,6 +3,7 @@ package main
 import (
 	pokeapi "bd_gokedex/internal/pokeapi"
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -19,10 +20,8 @@ type cliCommand struct {
 
 type cmdConfig struct {
 	pokeapiClient pokeapi.Client
-	Previous      int
-	Next          int
-	PrevURL       string
-	NextURL       string
+	PrevURL       *string
+	NextURL       *string
 }
 
 func getCmds() map[string]cliCommand {
@@ -101,37 +100,35 @@ func commandHelp(config *cmdConfig) error {
 }
 
 func commandMap(config *cmdConfig) error {
-	for i := config.Next; i < config.Next+20; i++ {
-		//fmt.Printf("DEBUG: requesting id %v", i)
-		mapName, err := config.pokeapiClient.LARequest(i)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%v\n", mapName)
+	locationsResp, err := config.pokeapiClient.LARequest(config.NextURL)
+	if err != nil {
+		return err
 	}
-	config.Previous = config.Next
-	config.Next = config.Next + 20
+
+	config.NextURL = locationsResp.Next
+	config.PrevURL = locationsResp.Previous
+
+	for _, loc := range locationsResp.Results {
+		fmt.Println(loc.Name)
+	}
 	return nil
 }
 
 func commandMapB(config *cmdConfig) error {
-
-	config.Next = config.Previous
-	config.Previous -= 20
-	if config.Previous <= 0 {
-		fmt.Print("You're on the first page\n")
-		config.Previous = 0
-		config.Next = 1
-		return nil
-	}
-	for i := config.Previous; i < config.Next; i++ {
-		//fmt.Printf("DEBUG: requesting id %v", i)
-		mapName, err := config.pokeapiClient.LARequest(i)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%v\n", mapName)
+	if config.PrevURL == nil {
+		return errors.New("you're on the first page\n")
 	}
 
+	locationResp, err := config.pokeapiClient.LARequest(config.PrevURL)
+	if err != nil {
+		return err
+	}
+
+	config.NextURL = locationResp.Next
+	config.PrevURL = locationResp.Previous
+
+	for _, loc := range locationResp.Results {
+		fmt.Println(loc.Name)
+	}
 	return nil
 }
