@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func commandExplore(config *cmdConfig, area []string) error {
+func commandExplore(config *cmdConfig, area ...string) error {
 	if len(area) == 0 {
 		return errors.New("you must include an area")
 	}

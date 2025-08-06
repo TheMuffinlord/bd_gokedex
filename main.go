@@ -14,7 +14,7 @@ var supportedCmds map[string]cliCommand
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*cmdConfig, []string) error
+	callback    func(*cmdConfig, ...string) error
 }
 
 type cmdConfig struct {
@@ -30,6 +30,11 @@ func getCmds() map[string]cliCommand {
 			description: "Exit the Pokedex",
 			callback:    commandExit,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Lists pokemon in an area. Requires an area to return results.",
+			callback:    commandExplore,
+		},
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
@@ -44,11 +49,6 @@ func getCmds() map[string]cliCommand {
 			name:        "mapb",
 			description: "Displays a list of 20 regions, counting down",
 			callback:    commandMapB,
-		},
-		"explore": {
-			name:        "explore",
-			description: "Lists pokemon in an area. Requires an area to return results.",
-			callback:    commandExplore,
 		},
 	}
 }
@@ -71,9 +71,12 @@ func startRepl(config *cmdConfig) {
 		cleanCmd := cleanInput(newCmd)
 		//fmt.Printf("Your command was: %v\n", cleanCmd[0])
 		command, exists := getCmds()[cleanCmd[0]]
-		param := cleanCmd[1:]
+		params := []string{}
+		if len(cleanCmd) > 1 {
+			params = cleanCmd[1:]
+		}
 		if exists {
-			err := command.callback(config, param)
+			err := command.callback(config, params...)
 			if err != nil {
 				fmt.Printf("Error: %v", err)
 			}
