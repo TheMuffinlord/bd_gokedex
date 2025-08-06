@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bd_gokedex/pokeapi"
+	pokeapi "bd_gokedex/internal/pokeapi"
 	"bufio"
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 var supportedCmds map[string]cliCommand
@@ -13,18 +14,19 @@ var supportedCmds map[string]cliCommand
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *cmdConfig) error
+	callback    func(*cmdConfig) error
 }
 
 type cmdConfig struct {
-	Previous int
-	Next     int
-	PrevURL  string
-	NextURL  string
+	pokeapiClient pokeapi.Client
+	Previous      int
+	Next          int
+	PrevURL       string
+	NextURL       string
 }
 
-func main() {
-	supportedCmds = map[string]cliCommand{
+func getCmds() map[string]cliCommand {
+	return map[string]cliCommand{
 		"exit": {
 			name:        "exit",
 			description: "Exit the Pokedex",
@@ -46,19 +48,28 @@ func main() {
 			callback:    commandMapB,
 		},
 	}
+}
+
+func main() {
+	pokeClient := pokeapi.NewClient(5*time.Second, 5*time.Minute)
+	config := &cmdConfig{
+		pokeapiClient: pokeClient,
+	}
+	startRepl(config)
+}
+
+func startRepl(config *cmdConfig) {
 	cliScanner := bufio.NewScanner(os.Stdin)
-	var currentConfig cmdConfig
-	currentConfig.Previous = 0
-	currentConfig.Next = 1
+
 	for {
 		fmt.Print("Pokedex > ")
 		cliScanner.Scan()
 		newCmd := cliScanner.Text()
 		cleanCmd := cleanInput(newCmd)
 		//fmt.Printf("Your command was: %v\n", cleanCmd[0])
-		command, exists := supportedCmds[cleanCmd[0]]
+		command, exists := getCmds()[cleanCmd[0]]
 		if exists {
-			err := command.callback(&currentConfig)
+			err := command.callback(config)
 			if err != nil {
 				fmt.Printf("Error: %v", err)
 			}
@@ -92,7 +103,7 @@ func commandHelp(config *cmdConfig) error {
 func commandMap(config *cmdConfig) error {
 	for i := config.Next; i < config.Next+20; i++ {
 		//fmt.Printf("DEBUG: requesting id %v", i)
-		mapName, err := pokeapi.LARequest(i)
+		mapName, err := config.pokeapiClient.LARequest(i)
 		if err != nil {
 			return err
 		}
@@ -115,7 +126,7 @@ func commandMapB(config *cmdConfig) error {
 	}
 	for i := config.Previous; i < config.Next; i++ {
 		//fmt.Printf("DEBUG: requesting id %v", i)
-		mapName, err := pokeapi.LARequest(i)
+		mapName, err := config.pokeapiClient.LARequest(i)
 		if err != nil {
 			return err
 		}
