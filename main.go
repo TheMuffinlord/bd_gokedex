@@ -17,6 +17,8 @@ type cliCommand struct {
 	callback    func(*cmdConfig, ...string) error
 }
 
+// i guess doing the ...string instead of []string saves some hassle if it's zero length?
+
 type cmdConfig struct {
 	pokeapiClient pokeapi.Client
 	PrevURL       *string
