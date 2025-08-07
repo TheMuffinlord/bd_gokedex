@@ -23,10 +23,16 @@ type cmdConfig struct {
 	pokeapiClient pokeapi.Client
 	PrevURL       *string
 	NextURL       *string
+	Pokedex       map[string]pokeapi.Pokemon
 }
 
 func getCmds() map[string]cliCommand {
 	return map[string]cliCommand{
+		"catch": {
+			name:        "catch",
+			description: "Attempts to catch a Pokemon. The name of a Pokemon must be supplied.",
+			callback:    commandCatch,
+		},
 		"exit": {
 			name:        "exit",
 			description: "Exit the Pokedex",
@@ -59,6 +65,7 @@ func main() {
 	pokeClient := pokeapi.NewClient(5*time.Second, 5*time.Minute)
 	config := &cmdConfig{
 		pokeapiClient: pokeClient,
+		Pokedex:       map[string]pokeapi.Pokemon{},
 	}
 	startRepl(config)
 }
