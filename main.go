@@ -40,13 +40,18 @@ func getCmds() map[string]cliCommand {
 		},
 		"explore": {
 			name:        "explore",
-			description: "Lists pokemon in an area. Requires an area to return results.",
+			description: "Lists Pokemon in an area. Requires an area to return results.",
 			callback:    commandExplore,
 		},
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
 			callback:    commandHelp,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "Inspects a Pokemon. You must have caught the Pokemon previously.",
+			callback:    commandInspect,
 		},
 		"map": {
 			name:        "map",

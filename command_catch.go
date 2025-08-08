@@ -20,7 +20,7 @@ func commandCatch(config *cmdConfig, target ...string) error {
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	catchChance := rng.Intn(pkmn.BaseExperience)
-	fmt.Printf("DEBUG: basexp: %d, catch chance: %d\n", pkmn.BaseExperience, catchChance)
+	//fmt.Printf("DEBUG: basexp: %d, catch chance: %d\n", pkmn.BaseExperience, catchChance)
 	if catchChance < 41 {
 		fmt.Printf("You caught a %v!\n", pkmn.Name)
 		config.Pokedex[pkmn.Name] = pkmn
