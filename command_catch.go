@@ -24,6 +24,7 @@ func commandCatch(config *cmdConfig, target ...string) error {
 	if catchChance < 41 {
 		fmt.Printf("You caught a %v!\n", pkmn.Name)
 		config.Pokedex[pkmn.Name] = pkmn
+		fmt.Print("You may now inspect it with the 'inspect' command.\n")
 	} else {
 		fmt.Printf("You couldn't catch the %v; try again!\n", pkmn.Name)
 	}

@@ -63,6 +63,11 @@ func getCmds() map[string]cliCommand {
 			description: "Displays a list of 20 regions, counting down",
 			callback:    commandMapB,
 		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Lists all caught Pokemon.",
+			callback:    commandPokedex,
+		},
 	}
 }
 
